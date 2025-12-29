@@ -1,0 +1,12 @@
+do_token        = "your-digitalocean-api-token"
+ssh_key_name    = "your-ssh-key-name"
+ssh_public_key  = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC..."
+east_server     = "http://east.example.com"
+west_server     = "http://west.example.com"
+
+# Optional overrides
+# project_name      = "fogspark-proxy"
+# droplet_size      = "s-1vcpu-1gb"
+# east_coast_region = "nyc1"
+# west_coast_region = "sfo3"
+

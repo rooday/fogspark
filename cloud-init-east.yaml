@@ -1,0 +1,60 @@
+#cloud-config
+users:
+  - name: rooday
+    groups: sudo
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - nginx
+  - ufw
+  - git
+  - curl
+
+write_files:
+%{ for filename, content in nginx_configs ~}
+  - path: /etc/nginx/sites-available/${filename}
+    content: |
+${indent(6, content)}
+    permissions: '0644'
+    owner: root:root
+%{ endfor ~}
+
+runcmd:
+  - |
+    # Disable default nginx site
+    rm -f /etc/nginx/sites-enabled/default
+    
+    # Enable all nginx sites
+%{ for filename in keys(nginx_configs) ~}
+    ln -sf /etc/nginx/sites-available/${filename} /etc/nginx/sites-enabled/${filename}
+%{ endfor ~}
+    
+    # Install LibreSpeed
+    mkdir -p /var/www/librespeed
+    cd /var/www/librespeed
+    git clone https://github.com/librespeed/speedtest.git .
+    chown -R www-data:www-data /var/www/librespeed
+    
+    # Configure UFW
+    ufw --force enable
+    ufw default deny incoming
+    ufw default allow outgoing
+    ufw allow 22/tcp
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+    
+    # Configure SSH
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+    sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+    systemctl restart sshd
+    
+    # Start and enable nginx
+    systemctl enable nginx
+    systemctl restart nginx
+
